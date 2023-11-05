@@ -5,6 +5,7 @@ class UserManager(BaseUserManager):
     def create_user(self, user_id, password, **kwargs):
         if not user_id:
             raise ValueError('Users must have an user_id')
+        
         user = self.model(
             user_id=user_id,
             **kwargs # 추가

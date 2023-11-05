@@ -37,7 +37,7 @@ class UserLoginView(APIView):
         user = serializer.validated_data['user_id']
 
         if user is None :
-            raise AuthenticationFailed('User does not found!')
+            raise AuthenticationFailed('잘못된 아이디입니다.')
         
         current_time = datetime.now(timezone.utc)
         expiration_time = current_time + timedelta(minutes=60)

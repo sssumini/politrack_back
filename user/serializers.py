@@ -14,7 +14,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('confirm_password')
         
         if validated_data['password'] != self.initial_data['confirm_password']:
-            raise serializers.ValidationError("Passwords do not match")
+            raise serializers.ValidationError("잘못된 비밀번호입니다.")
         
         user = User.objects.create_user(
             user_id = validated_data['user_id'],
@@ -42,10 +42,10 @@ class UserLoginSerializer(serializers.ModelSerializer):
             user = User.objects.filter(user_id=user_id).first()
 
         if user is None:
-            raise serializers.ValidationError('User does not exist.')
+            raise serializers.ValidationError('잘못된 아이디입니다.')
 
         if not user.check_password(password):
-            raise serializers.ValidationError('Incorrect password.')
+            raise serializers.ValidationError('잘못된 비밀번호입니다.')
 
         attrs['user'] = user
         return attrs
