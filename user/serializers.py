@@ -5,11 +5,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 # 회원가입용 시리얼라이저
 class UserRegisterSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True)
     class Meta:
         model = User
-        fields = ['user_id', 'password']
+        fields = ['user_id', 'password', 'confirm_password']
 
     def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        
+        if validated_data['password'] != self.initial_data['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match")
+        
         user = User.objects.create_user(
             user_id = validated_data['user_id'],
             password = validated_data['password'],

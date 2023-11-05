@@ -19,6 +19,7 @@ class UserRegisterView(APIView):
     serializer_class = UserRegisterSerializer
     def post(self, req):
         serializer = UserRegisterSerializer(data=req.data)
+        
         if serializer.is_valid():
             serializer.save()
 
@@ -43,7 +44,7 @@ class UserLoginView(APIView):
 
         ## JWT 구현 부분
         payload = {
-            'id' : user, # KeyError 발생 때문에 'user_id'로 변경
+            'id' : user,
             'exp' : expiration_time,
             'iat' : current_time
         }
