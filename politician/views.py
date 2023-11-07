@@ -9,6 +9,12 @@ from rest_framework import status
 from django.conf import settings
 import requests, json
 
+from wordcloud import WordCloud
+from wordcloud import STOPWORDS
+import matplotlib.pyplot as plt
+from django.http import HttpResponse
+import io, os, matplotlib, PIL
+
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
@@ -47,28 +53,74 @@ def create(self, request):
 
     return Response(serializer.data)
 
+
+
 class BoardViewSet(viewsets.ModelViewSet):
 
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    @action(detail=True, methods=['get'])
-    def get_community_fields(self, request, pk=None):
-        # Board 인스턴스 가져오기
-        board = self.get_object()
-        community = board.community
+    @action(detail=True, methods=['GET'])
+    def result(self, request, pk, community_id):
+        total_count = Board.objects.count()
+        option1_count = Board.objects.filter(pick='option1').count()
+        option2_count = Board.objects.filter(pick='option2').count()
+        option3_count = Board.objects.filter(pick='option3').count()
 
-        # Board 인스턴스의 Community 필드를 가져오기
-        response_data = {
-            'community_id': community.id,
-            'board_id': board.id,
-            'title': board.community.title,
-            'content': board.community.content,
-            'created_at': board.community.created_at,
-            'deadline': board.community.deadline,
-            'comment': board.comment
+        option1_percentage = (option1_count / total_count) * 100
+        option2_percentage = (option2_count / total_count) * 100
+        option3_percentage = (option3_count / total_count) * 100
+        
+        data = {
+            'option1_count': option1_percentage,
+            'option2_count': option2_percentage,
+            'option3_count': option3_percentage,
         }
 
-        return Response(response_data)
+        return Response(data)
+    
+def generate_wordcloud(request, community_id):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+
+    font_path = 'C:\\Windows\\Fonts\\malgun.ttf'
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=200, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = True,
+        collocations=False,
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.save()
+
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
 
 

@@ -1,6 +1,6 @@
 from django.db import models
-
 from django.utils import timezone
+from user.models import User
 
 # Create your models here.
 class Community(models.Model):
@@ -12,12 +12,16 @@ class Community(models.Model):
 
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
-    community = models.OneToOneField(Community, blank=False, null=False, on_delete=models.CASCADE)
-    #user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    idea_a = models.TextField(max_length=300)
-    idea_b = models.TextField(max_length=300)
-    idea_c = models.TextField(max_length=300)
+    community = models.ForeignKey(Community, related_name='board', blank=False, null=False, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
+    idea_a = models.TextField(max_length=300,blank=True)
+    idea_b = models.TextField(max_length=300,blank=True)
+    idea_c = models.TextField(max_length=300,blank=True)
+    idea_a_des = models.TextField(max_length=300,blank=True)
+    idea_b_des = models.TextField(max_length=300,blank=True)
+    idea_c_des = models.TextField(max_length=300,blank=True)
     comment = models.TextField(max_length=300,blank=True)
+    pick_title = models.TextField(max_length=300,blank=True)
 
 
     PICK_CHOICES = [
