@@ -1,4 +1,5 @@
 from django.db import models
+
 from django.utils import timezone
 
 # Create your models here.
@@ -25,3 +26,5 @@ class Board(models.Model):
         ('option3', 'Option 3'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES)
+
+

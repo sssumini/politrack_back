@@ -17,6 +17,22 @@ import json
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+import os
+import environ
+
+# 환경변수를 불러올 수 있는 상태로 설정
+env = environ.Env(DEBUG=(bool, True))
+
+# 읽어올 환경 변수 파일을 지정
+environ.Env.read_env(
+  env_file = os.path.join(BASE_DIR, '.env')
+)
+
+# 국회의원 인적사항 API KEY
+PERSONAL_DATA_API_KEY = env('PERSONAL_DATA_API_KEY')
+
+
+# secret_key 관련
 secret_file = BASE_DIR / 'secrets.json'
 with open(secret_file) as file: # secrets파일 읽어와서 json으로 처리 
     secrets = json.loads(file.read())
