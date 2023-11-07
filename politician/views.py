@@ -47,28 +47,31 @@ def create(self, request):
 
     return Response(serializer.data)
 
+
+
 class BoardViewSet(viewsets.ModelViewSet):
 
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    @action(detail=True, methods=['get'])
-    def get_community_fields(self, request, pk=None):
-        # Board 인스턴스 가져오기
-        board = self.get_object()
-        community = board.community
+    @action(detail=False, methods=['GET'])
+    def result(self, request):
+        total_count = Board.objects.count()
+        option1_count = Board.objects.filter(pick='option1').count()
+        option2_count = Board.objects.filter(pick='option2').count()
+        option3_count = Board.objects.filter(pick='option3').count()
 
-        # Board 인스턴스의 Community 필드를 가져오기
-        response_data = {
-            'community_id': community.id,
-            'board_id': board.id,
-            'title': board.community.title,
-            'content': board.community.content,
-            'created_at': board.community.created_at,
-            'deadline': board.community.deadline,
-            'comment': board.comment
+        option1_percentage = (option1_count / total_count) * 100
+        option2_percentage = (option2_count / total_count) * 100
+        option3_percentage = (option3_count / total_count) * 100
+
+        data = {
+            'option1_count': option1_percentage,
+            'option2_count': option2_percentage,
+            'option3_count': option3_percentage,
         }
 
-        return Response(response_data)
+        return Response(data)
+
 
 
