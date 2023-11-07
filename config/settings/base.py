@@ -64,7 +64,7 @@ PROJECT_APPS =[
     'rest_framework',
     'rest_framework_simplejwt',
     'user',
-    # 'politician',
+    'politician',
 ]
 
 THIRD_PARTY_APPS = [

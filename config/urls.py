@@ -22,5 +22,5 @@ from politician.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include("user.urls")),
-    path('politician/', include("politician.urls")),
+    path('politician/',include('politician.urls')),
 ]
