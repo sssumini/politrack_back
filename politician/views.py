@@ -9,6 +9,12 @@ from rest_framework import status
 from django.conf import settings
 import requests, json
 
+from wordcloud import WordCloud
+from wordcloud import STOPWORDS
+import matplotlib.pyplot as plt
+from django.http import HttpResponse
+import io
+
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
@@ -54,8 +60,8 @@ class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    @action(detail=False, methods=['GET'])
-    def result(self, request):
+    @action(detail=True, methods=['GET'])
+    def result(self, request, pk, community_id):
         total_count = Board.objects.count()
         option1_count = Board.objects.filter(pick='option1').count()
         option2_count = Board.objects.filter(pick='option2').count()
@@ -64,7 +70,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         option1_percentage = (option1_count / total_count) * 100
         option2_percentage = (option2_count / total_count) * 100
         option3_percentage = (option3_count / total_count) * 100
-
+        
         data = {
             'option1_count': option1_percentage,
             'option2_count': option2_percentage,
@@ -72,6 +78,5 @@ class BoardViewSet(viewsets.ModelViewSet):
         }
 
         return Response(data)
-
 
 
