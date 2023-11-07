@@ -16,5 +16,5 @@ board_router.register("board",BoardViewSet, basename="board")
 urlpatterns = [
     path("", include(default_router.urls)),
     path('list/<str:poly_nm>', views.politician_list),
-    path("community/", include(board_router.urls)),
+    path("community/<community_id>/", include(board_router.urls)),
 ]
