@@ -13,7 +13,7 @@ from wordcloud import WordCloud
 from wordcloud import STOPWORDS
 import matplotlib.pyplot as plt
 from django.http import HttpResponse
-import io
+import io, os, matplotlib, PIL
 
 # Create your views here.
 
@@ -78,5 +78,49 @@ class BoardViewSet(viewsets.ModelViewSet):
         }
 
         return Response(data)
+    
+def generate_wordcloud(request, community_id):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+
+    font_path = 'C:\\Windows\\Fonts\\malgun.ttf'
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=200, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = True,
+        collocations=False,
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.save()
+
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
 
 
