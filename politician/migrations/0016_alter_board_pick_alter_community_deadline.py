@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0015_remove_community_comment_alter_community_deadline_and_more'),
+        ('politician', '0015_remove_community_comment_alter_community_deadline_and_more'),
     ]
 
     operations = [

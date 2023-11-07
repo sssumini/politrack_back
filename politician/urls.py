@@ -5,7 +5,7 @@ from rest_framework import routers
 from django.conf import settings
 from .views import CommunityViewSet, BoardViewSet
 
-app_name="main"
+app_name="politician"
 
 default_router = routers.SimpleRouter()
 default_router.register("community", CommunityViewSet, basename="community")

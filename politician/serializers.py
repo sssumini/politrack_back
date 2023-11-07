@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import *
-from main.models import Community, Board
+from politician.models import Community, Board
 
 class CommunitySerializer(serializers.ModelSerializer):
 

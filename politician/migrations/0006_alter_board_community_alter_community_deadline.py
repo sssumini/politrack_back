@@ -8,14 +8,14 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('main', '0005_alter_community_deadline'),
+        ('politician', '0005_alter_community_deadline'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='board',
             name='community',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='main.community'),
+            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='politician.community'),
         ),
         migrations.AlterField(
             model_name='community',
