@@ -12,8 +12,8 @@ class Community(models.Model):
 
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
-    community = models.OneToOneField(Community, related_name='board', blank=False, null=False, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    community = models.ForeignKey(Community, related_name='board', blank=False, null=False, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     idea_a = models.TextField(max_length=300,blank=True)
     idea_b = models.TextField(max_length=300,blank=True)
     idea_c = models.TextField(max_length=300,blank=True)

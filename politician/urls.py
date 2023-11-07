@@ -17,4 +17,5 @@ urlpatterns = [
     path("", include(default_router.urls)),
     path('list/<str:poly_nm>', views.politician_list),
     path("community/<community_id>/", include(board_router.urls)),
+    path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]
