@@ -32,3 +32,20 @@ class Board(models.Model):
     pick = models.CharField(max_length=10, choices=PICK_CHOICES)
 
 
+
+class Quiz(models.Model):
+    quiz_id = models.AutoField(primary_key=True)
+    description = models.CharField(max_length=100,blank=True)
+    pick_title = models.TextField(max_length=300,blank=True)
+    PICK_CHOICES = [
+        ('option1', 'Option 1'),
+        ('option2', 'Option 2'),
+    ]
+    pick = models.CharField(max_length=10, choices=PICK_CHOICES)
+
+    ANSWER_CHOICES = [
+        ('option1', 'Option 1'),
+        ('option2', 'Option 2'),
+    ]
+    answer = models.CharField(max_length=10, choices=ANSWER_CHOICES)
+    answer_des = models.TextField(max_length=300,blank=True)
