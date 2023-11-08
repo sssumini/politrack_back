@@ -90,6 +90,24 @@ def politician_list_by_orig(request, orig_nm):
     
     return Response(result)
 
+@api_view(['GET'])
+def politician_list_by_hgnm(request, hg_nm):
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'HG_NM': hg_nm
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+    
+    return Response(result)
+
 
 
 class CommunityViewSet(viewsets.ModelViewSet):

@@ -21,6 +21,7 @@ urlpatterns = [
     path("", include(quiz_router.urls)),
     path('poly/<str:poly_nm>', views.politician_list_by_poly),
     path('orig/<str:orig_nm>', views.politician_list_by_orig),
+    path('name/<str:hg_nm>', views.politician_list_by_hgnm),
     path("community/<community_id>/", include(board_router.urls)),
     path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]
