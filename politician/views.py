@@ -2,8 +2,8 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board
-from .serializers import CommunitySerializer, BoardSerializer
+from .models import Community, Board, Quiz
+from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
 from django.conf import settings
@@ -66,6 +66,8 @@ class BoardViewSet(viewsets.ModelViewSet):
         option1_count = Board.objects.filter(pick='option1').count()
         option2_count = Board.objects.filter(pick='option2').count()
         option3_count = Board.objects.filter(pick='option3').count()
+        
+        pick_title = Board.objects.filter(pk=pk).values('pick_title').first()
 
         option1_percentage = (option1_count / total_count) * 100
         option2_percentage = (option2_count / total_count) * 100
@@ -75,6 +77,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             'option1_count': option1_percentage,
             'option2_count': option2_percentage,
             'option3_count': option3_percentage,
+            'pick_title': pick_title['pick_title'],
         }
 
         return Response(data)
@@ -124,3 +127,6 @@ def generate_wordcloud(request, community_id):
     return HttpResponse(buf.getvalue(), content_type='image/png')
 
 
+class QuizViewSet(viewsets.ModelViewSet):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer
