@@ -73,8 +73,20 @@ def politician_list_by_orig(request, orig_nm):
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
+    count = 0
     for i in range(len(data['row'])):
         result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+        if data['row'][i]['POLY_NM'] == '더불어민주당':
+            count += 1
+        elif data['row'][i]['POLY_NM'] == '국민의힘':
+            count -= 1
+    
+    if count == len(data['row']):
+        result.append({'vict_poly': 1}) # 더불어민주당 승리구일 경우
+    elif count == -len(data['row']):
+        result.append({'vict_poly': 2}) # 국민의힘 승리구일 경우
+    else:
+        result.append({'vict_poly': 3}) # 두 정당이 섞여 있는 구일 경우
     
     return Response(result)
 
