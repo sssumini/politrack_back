@@ -19,7 +19,8 @@ board_router.register("board",BoardViewSet, basename="board")
 urlpatterns = [
     path("", include(community_router.urls)),
     path("", include(quiz_router.urls)),
-    path('list/<str:poly_nm>', views.politician_list),
+    path('poly/<str:poly_nm>', views.politician_list_by_poly),
+    path('orig/<str:orig_nm>', views.politician_list_by_orig),
     path("community/<community_id>/", include(board_router.urls)),
     path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]

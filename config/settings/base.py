@@ -30,6 +30,8 @@ environ.Env.read_env(
 
 # 국회의원 인적사항 API KEY
 PERSONAL_DATA_API_KEY = env('PERSONAL_DATA_API_KEY')
+# 선거구별 투표구, 선거인수 API_KEY
+# ELECTORS_NUMBER_API_KEY = env('ELECTORS_NUMBER_API_KEY')
 
 
 # secret_key 관련

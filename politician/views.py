@@ -18,10 +18,13 @@ import io, os, matplotlib, PIL
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
+# ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
+
+personal_data_url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
+# electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
 
 @api_view(['GET'])
-def politician_list(request, poly_nm):
-    url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
+def politician_list_by_poly(request, poly_nm):
     params = {
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
@@ -29,13 +32,49 @@ def politician_list(request, poly_nm):
         'pSize': 100,
         'POLY_NM': poly_nm
     }
-    response = requests.get(url, params=params)
+    response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
-    for i in range(params['pSize']):
-        if poly_nm == data['row'][i]['POLY_NM']:
-            result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+    
+    return Response(result)
+
+@api_view(['GET'])
+def politician_list_by_orig(request, orig_nm):
+    # --- 투표구 수 및 선거인수 조회 관련 API 사용 ---
+    # 값이 강서구 데이터밖에 없는 것 같음
+    # params = {
+    #     'serviceKey': ELECTORS_NUMBER_API_KEY,
+    #     'pageNo': '1',
+    #     'numOfRows': '5',
+    #     'resultType': 'json',
+    #     'sgId': '20231011',
+    #     'sgTypecode': '4',
+    #     'sdName': '서울특별시',
+    #     'wiwName': '강동구'
+    # }
+    # params ={'serviceKey' : ELECTORS_NUMBER_API_KEY, 'pageNo' : '1', 'numOfRows' : '10', 'resultType' : 'json', 'sgId' : '20231011', 'sgTypecode' : '4', 'sdName' : '서울특별시', 'wiwName' : '강동구' }
+    # response = requests.get(electors_number_url, params=params)
+    # response = json.loads(response)
+    # data = response.json() # 계속해서 JSONDecodeError 발생
+    # return Response(response)
+    
+    # --- 선거구별 정치인 조회 API 사용 ---
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'ORIG_NM': orig_nm
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
     
     return Response(result)
 
