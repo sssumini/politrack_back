@@ -87,10 +87,12 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-CORS_ORIGIN_WHITELIST = (
-    "http://43.200.133.223:5173",
-    "http://43.200.133.223:5174",
-)
+# CORS_ORIGIN_WHITELIST = (
+#     "http://43.200.133.223:5173",
+#     "http://43.200.133.223:5174",
+# )
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'config.urls'
 
