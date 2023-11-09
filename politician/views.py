@@ -185,15 +185,15 @@ def generate_wordcloud(request, community_id):
                     word_frequencies[word] += 1
                 else:
                     word_frequencies[word] = 1
-
-    font_path = 'C:\\Windows\\Fonts\\malgun.ttf'
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-Bold.ttf')
     wordcloud = WordCloud(
         width=400, height=400, 
         max_font_size=200, 
         background_color='white', 
         font_path=font_path, 
-        prefer_horizontal = True,
-        collocations=False,
+        prefer_horizontal = False,
+        collocations=False, 
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
