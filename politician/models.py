@@ -10,6 +10,7 @@ class Community(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     deadline = models.DateTimeField(default=timezone.now()+timezone.timedelta(days=7),editable=False)
 
+
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
     community = models.ForeignKey(Community, related_name='board', blank=False, null=False, on_delete=models.CASCADE)
