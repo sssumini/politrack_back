@@ -186,7 +186,7 @@ def generate_wordcloud(request, community_id):
                 else:
                     word_frequencies[word] = 1
     project_root = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(project_root, 'NotoSansKR-Bold.ttf')
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
     wordcloud = WordCloud(
         width=400, height=400, 
         max_font_size=200, 
