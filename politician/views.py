@@ -2,8 +2,8 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board
-from .serializers import CommunitySerializer, BoardSerializer
+from .models import Community, Board, Quiz
+from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
 from django.conf import settings
@@ -18,10 +18,13 @@ import io, os, matplotlib, PIL
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
+# ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
+
+personal_data_url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
+# electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
 
 @api_view(['GET'])
-def politician_list(request, poly_nm):
-    url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
+def politician_list_by_poly(request, poly_nm):
     params = {
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
@@ -29,13 +32,97 @@ def politician_list(request, poly_nm):
         'pSize': 100,
         'POLY_NM': poly_nm
     }
-    response = requests.get(url, params=params)
+    response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
-    for i in range(params['pSize']):
-        if poly_nm == data['row'][i]['POLY_NM']:
-            result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+    
+    return Response(result)
+
+@api_view(['GET'])
+def politician_list_by_orig(request, orig_nm):
+    # --- 투표구 수 및 선거인수 조회 관련 API 사용 ---
+    # 값이 강서구 데이터밖에 없는 것 같음
+    # params = {
+    #     'serviceKey': ELECTORS_NUMBER_API_KEY,
+    #     'pageNo': '1',
+    #     'numOfRows': '5',
+    #     'resultType': 'json',
+    #     'sgId': '20231011',
+    #     'sgTypecode': '4',
+    #     'sdName': '서울특별시',
+    #     'wiwName': '강동구'
+    # }
+    # params ={'serviceKey' : ELECTORS_NUMBER_API_KEY, 'pageNo' : '1', 'numOfRows' : '10', 'resultType' : 'json', 'sgId' : '20231011', 'sgTypecode' : '4', 'sdName' : '서울특별시', 'wiwName' : '강동구' }
+    # response = requests.get(electors_number_url, params=params)
+    # response = json.loads(response)
+    # data = response.json() # 계속해서 JSONDecodeError 발생
+    # return Response(response)
+    
+    # --- 선거구별 정치인 조회 API 사용 ---
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'ORIG_NM': orig_nm
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    count = 0
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+        if data['row'][i]['POLY_NM'] == '더불어민주당':
+            count += 1
+        elif data['row'][i]['POLY_NM'] == '국민의힘':
+            count -= 1
+    
+    if count == len(data['row']):
+        result.append({'vict_poly': 1}) # 더불어민주당 승리구일 경우
+    elif count == -len(data['row']):
+        result.append({'vict_poly': 2}) # 국민의힘 승리구일 경우
+    else:
+        result.append({'vict_poly': 3}) # 두 정당이 섞여 있는 구일 경우
+    
+    return Response(result)
+
+@api_view(['GET'])
+def politician_list_by_hgnm(request, hg_nm):
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'HG_NM': hg_nm
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+    
+    return Response(result)
+
+@api_view(['GET'])
+def politician_list_by_mona(request, mona_cd):
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'MONA_CD': mona_cd
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 'MEM_TITLE': data['row'][i]['MEM_TITLE']})
     
     return Response(result)
 
@@ -66,6 +153,8 @@ class BoardViewSet(viewsets.ModelViewSet):
         option1_count = Board.objects.filter(pick='option1').count()
         option2_count = Board.objects.filter(pick='option2').count()
         option3_count = Board.objects.filter(pick='option3').count()
+        
+        pick_title = Board.objects.filter(pk=pk).values('pick_title').first()
 
         option1_percentage = (option1_count / total_count) * 100
         option2_percentage = (option2_count / total_count) * 100
@@ -75,6 +164,7 @@ class BoardViewSet(viewsets.ModelViewSet):
             'option1_count': option1_percentage,
             'option2_count': option2_percentage,
             'option3_count': option3_percentage,
+            'pick_title': pick_title['pick_title'],
         }
 
         return Response(data)
@@ -124,3 +214,6 @@ def generate_wordcloud(request, community_id):
     return HttpResponse(buf.getvalue(), content_type='image/png')
 
 
+class QuizViewSet(viewsets.ModelViewSet):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer

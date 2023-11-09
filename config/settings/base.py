@@ -30,6 +30,8 @@ environ.Env.read_env(
 
 # 국회의원 인적사항 API KEY
 PERSONAL_DATA_API_KEY = env('PERSONAL_DATA_API_KEY')
+# 선거구별 투표구, 선거인수 API_KEY
+# ELECTORS_NUMBER_API_KEY = env('ELECTORS_NUMBER_API_KEY')
 
 
 # secret_key 관련
@@ -61,6 +63,7 @@ DJANGO_APPS = [
 ]
 
 PROJECT_APPS =[
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'user',
@@ -81,7 +84,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+# CORS_ORIGIN_WHITELIST = (
+#     "http://43.200.133.223:5173",
+#     "http://43.200.133.223:5174",
+# )
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'config.urls'
 

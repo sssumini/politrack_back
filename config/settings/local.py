@@ -3,7 +3,7 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [] # 로컬 환경에서만 runserver 시 python manage.py runserver --settings=config.settings.local 사용
+ALLOWED_HOSTS = ['*'] # 로컬 환경에서만 runserver 시 python manage.py runserver --settings=config.settings.local 사용
 
 DJANGO_APPS += [
     
