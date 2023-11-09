@@ -22,6 +22,7 @@ urlpatterns = [
     path('poly/<str:poly_nm>', views.politician_list_by_poly),
     path('orig/<str:orig_nm>', views.politician_list_by_orig),
     path('name/<str:hg_nm>', views.politician_list_by_hgnm),
+    path('id/<str:mona_cd>', views.politician_list_by_mona),
     path("community/<community_id>/", include(board_router.urls)),
     path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]

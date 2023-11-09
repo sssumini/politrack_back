@@ -37,7 +37,7 @@ def politician_list_by_poly(request, poly_nm):
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
     
     return Response(result)
 
@@ -75,7 +75,7 @@ def politician_list_by_orig(request, orig_nm):
     result = []
     count = 0
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
         if data['row'][i]['POLY_NM'] == '더불어민주당':
             count += 1
         elif data['row'][i]['POLY_NM'] == '국민의힘':
@@ -104,7 +104,25 @@ def politician_list_by_hgnm(request, hg_nm):
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+    
+    return Response(result)
+
+@api_view(['GET'])
+def politician_list_by_mona(request, mona_cd):
+    params = {
+        'KEY': PERSONAL_DATA_API_KEY,
+        'Type': 'json',
+        'pIndex': 1,
+        'pSize': 100,
+        'MONA_CD': mona_cd
+    }
+    response = requests.get(personal_data_url, params=params)
+    data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+    result = []
+    for i in range(len(data['row'])):
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 'MEM_TITLE': data['row'][i]['MEM_TITLE']})
     
     return Response(result)
 
