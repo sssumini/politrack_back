@@ -21,7 +21,7 @@ class Board(models.Model):
     idea_a_des = models.TextField(max_length=300,blank=True)
     idea_b_des = models.TextField(max_length=300,blank=True)
     idea_c_des = models.TextField(max_length=300,blank=True)
-    comment = models.TextField(max_length=300,blank=True)
+    comment = models.TextField(max_length=300,blank=False)
     pick_title = models.TextField(max_length=300,blank=True)
 
 
