@@ -156,9 +156,9 @@ class BoardViewSet(viewsets.ModelViewSet):
         
         pick_title = Board.objects.filter(pk=pk).values('pick_title').first()
 
-        option1_percentage = (option1_count / total_count) * 100
-        option2_percentage = (option2_count / total_count) * 100
-        option3_percentage = (option3_count / total_count) * 100
+        option1_percentage = round((option1_count / total_count) * 100,1)
+        option2_percentage = round((option2_count / total_count) * 100,1)
+        option3_percentage = round((option3_count / total_count) * 100,1)
         
         data = {
             'option1_count': option1_percentage,
