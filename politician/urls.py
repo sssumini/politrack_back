@@ -14,7 +14,11 @@ quiz_router = routers.SimpleRouter()
 quiz_router.register("quiz", QuizViewSet, basename="quiz")
 
 board_router = routers.SimpleRouter()
-board_router.register("board",BoardViewSet, basename="board")
+board_router.register("communitydetail",BoardViewSet, basename="communitydetail")
+
+community_board_router = routers.SimpleRouter()
+community_board_router.register("detail",CommunityBoardViewSet, basename="detail")
+
 
 urlpatterns = [
     path("", include(community_router.urls)),
@@ -23,6 +27,7 @@ urlpatterns = [
     path('orig/<str:orig_nm>', views.politician_list_by_orig),
     path('name/<str:hg_nm>', views.politician_list_by_hgnm),
     path('id/<str:mona_cd>', views.politician_list_by_mona),
-    path("community/<community_id>/", include(board_router.urls)),
+    path("", include(board_router.urls)),
+    path("community/<int:community_id>/", include(community_board_router.urls)),
     path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]
