@@ -2,57 +2,67 @@ from .models import User
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+
+from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.validators import UniqueValidator
+# import TokenError
 
 # 회원가입용 시리얼라이저
-class UserRegisterSerializer(serializers.ModelSerializer):
-    confirm_password = serializers.CharField(write_only=True)
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['user_id'] = user.user_id
+        return token
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = User
-        fields = ['user_id', 'password', 'confirm_password']
+        fields = ('user_id', 'password', 'confirm_password')
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."})
+
+        return attrs
 
     def create(self, validated_data):
-        validated_data.pop('confirm_password')
-        
-        if validated_data['password'] != self.initial_data['confirm_password']:
-            raise serializers.ValidationError("잘못된 비밀번호입니다.")
-        
-        user = User.objects.create_user(
-            user_id = validated_data['user_id'],
-            password = validated_data['password'],
+        user = User.objects.create(
+            user_id=validated_data['user_id']
         )
+
+        user.set_password(validated_data['password'])
         user.save()
         return user
 
 # 로그인용 시리얼라이저
 class UserLoginSerializer(serializers.ModelSerializer):
-    user_id = serializers.CharField(write_only=True)
-
     class Meta:
         model = User
-        fields = ['user_id', 'password']
+        fields = "__all__"
+        
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': 'Token is invalid or expired'
+    }
 
     def validate(self, attrs):
-        user_id = attrs.get('user_id')
-        password = attrs.get('password')
-
-        if user_id.isdigit() and len(user_id) >= 11:
-            user = User.objects.filter(phonenumber=user_id).first()
-        else:
-            # user_id = int(user_id) - 1000 # 1001과 같은 값으로 로그인할 수 있도록
-            user = User.objects.filter(user_id=user_id).first()
-
-        if user is None:
-            raise serializers.ValidationError('잘못된 아이디입니다.')
-
-        if not user.check_password(password):
-            raise serializers.ValidationError('잘못된 비밀번호입니다.')
-
-        attrs['user'] = user
+        self.token = attrs['refresh']
         return attrs
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        return user
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except TokenError:
+            self.fail('bad_token')
 
 # 계정 확인용 시리얼라이저
 class UserDetailSerializer(serializers.ModelSerializer):
