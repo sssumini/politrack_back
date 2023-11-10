@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 import json
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -32,6 +33,8 @@ environ.Env.read_env(
 PERSONAL_DATA_API_KEY = env('PERSONAL_DATA_API_KEY')
 # 선거구별 투표구, 선거인수 API_KEY
 # ELECTORS_NUMBER_API_KEY = env('ELECTORS_NUMBER_API_KEY')
+# 정치인별 프로필 이미지 API_KEY
+PROFILE_IMAGE_API_KEY = env('PROFILE_IMAGE_API_KEY')
 
 
 # secret_key 관련
@@ -149,6 +152,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

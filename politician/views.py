@@ -2,12 +2,13 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board, Quiz
-from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer
+from .models import Community, Board, Quiz, Opinion
+from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer, OpinionSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
 from django.conf import settings
 import requests, json
+import xmltodict
 
 from wordcloud import WordCloud
 from wordcloud import STOPWORDS
@@ -15,13 +16,20 @@ import matplotlib.pyplot as plt
 from django.http import HttpResponse
 import io, os, matplotlib, PIL
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.http import JsonResponse
+
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
 # ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
+PROFILE_IMAGE_API_KEY = settings.PROFILE_IMAGE_API_KEY
 
 personal_data_url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
 # electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
+profile_image_url = 'http://apis.data.go.kr/9710000/NationalAssemblyInfoService/getMemberNameInfoList'
+bill_data_url = 'https://open.assembly.go.kr/portal/openapi/nzmimeepazxkubdpn'
 
 @api_view(['GET'])
 def politician_list_by_poly(request, poly_nm):
@@ -29,7 +37,7 @@ def politician_list_by_poly(request, poly_nm):
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 100,
+        'pSize': 10, # 다시 100으로 수정하면 jpg_link 가져오는데 에러 뜸 # 10개가 최대인 듯
         'POLY_NM': poly_nm
     }
     response = requests.get(personal_data_url, params=params)
@@ -37,8 +45,25 @@ def politician_list_by_poly(request, poly_nm):
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
-    
+        params = { # 불러온 데이터에 한해서 이름이 동일한 정치인별 프로필 이미지 가져오기
+            'serviceKey': PROFILE_IMAGE_API_KEY,
+            'numOfRows': 10,
+            'pageNo': 1,
+            'hgnm': data['row'][i]['HG_NM'] # '홍익표'
+        }
+        response = requests.get(profile_image_url, params=params)
+        data_dict = {}
+        data_dict = xmltodict.parse(response.content)
+
+        # Convert dictionary to JSON
+        json_result = json.dumps(data_dict, indent=2, ensure_ascii=False)
+
+        # print(json_result)
+        jpg_link = data_dict['response']['body']['items']['item']['jpgLink']
+        
+        save_image(jpg_link, data['row'][i]['MONA_CD'])
+
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
     return Response(result)
 
 @api_view(['GET'])
@@ -122,10 +147,44 @@ def politician_list_by_mona(request, mona_cd):
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 'MEM_TITLE': data['row'][i]['MEM_TITLE']})
-    
+        # 국회의원별 발의법률안
+        params = {
+            'KEY': PERSONAL_DATA_API_KEY,
+            'Type': 'json',
+            'pIndex': 1,
+            'pSize': 100,
+            'AGE': '21',
+            'PROPOSER': data['row'][i]['HG_NM']
+        }
+        response = requests.get(bill_data_url, params=params)
+        bill_data = response.json()['nzmimeepazxkubdpn'][1]
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+                       'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 
+                       'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 
+                       'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 
+                       'MEM_TITLE': data['row'][i]['MEM_TITLE']})
+        for j in range(len(bill_data['row'])):
+            result.append({'BILL_NAME': bill_data['row'][j]['BILL_NAME'], 'DETAIL_LINK': bill_data['row'][j]['DETAIL_LINK']})
     return Response(result)
 
+def save_image(image_url, mona_cd):
+    image_url = image_url
+    
+    filename = default_storage.get_available_name(mona_cd + ".jpg")
+    
+    # Check if the file already exists
+    if default_storage.exists(filename):
+        # File already exists, use the existing file
+        media_url = default_storage.url(filename)
+        # return JsonResponse({"media_url": media_url})
+    
+    response = requests.get(image_url)
+    
+    if response.status_code == 200:
+        with default_storage.open(filename, "wb") as f:
+            f.write(response.content)
+        
+        media_url = default_storage.url(filename)
 
 
 class CommunityViewSet(viewsets.ModelViewSet):
@@ -147,14 +206,33 @@ class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    @action(detail=True, methods=['GET'])
-    def result(self, request, pk, community_id):
-        total_count = Board.objects.count()
-        option1_count = Board.objects.filter(pick='option1').count()
-        option2_count = Board.objects.filter(pick='option2').count()
-        option3_count = Board.objects.filter(pick='option3').count()
+
+
+class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+
+    def list(self, request, community_id=None):
+        community = get_object_or_404(Community, community_id=community_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request, community_id=None):
+        community = get_object_or_404(Community, community_id=community_id)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(community=community)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['GET'])
+    def result(self, request, community_id=None):
+        total_count = Board.objects.filter(community_id=community_id).count()
+        option1_count = Board.objects.filter(community_id=community_id, pick='option1').count()
+        option2_count = Board.objects.filter(community_id=community_id,pick='option2').count()
+        option3_count = Board.objects.filter(community_id=community_id,pick='option3').count()
         
-        pick_title = Board.objects.filter(pk=pk).values('pick_title').first()
+        pick_title = Board.objects.filter(community_id=community_id).values('pick_title').first()
 
         option1_percentage = round((option1_count / total_count) * 100,1)
         option2_percentage = round((option2_count / total_count) * 100,1)
@@ -164,11 +242,16 @@ class BoardViewSet(viewsets.ModelViewSet):
             'option1_count': option1_percentage,
             'option2_count': option2_percentage,
             'option3_count': option3_percentage,
-            'pick_title': pick_title['pick_title'],
+            'pick_title': pick_title['pick_title'] if pick_title else None,
         }
 
         return Response(data)
     
+
+class OpinionViewSet(viewsets.ModelViewSet):
+    queryset = Opinion.objects.all()
+    serializer_class = OpinionSerializer
+
 
 class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
     queryset = Board.objects.all()
@@ -187,10 +270,11 @@ class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixi
         serializer.save(community=community)
         return Response(serializer.data)
 
-    
+
+      
 def generate_wordcloud(request, community_id):
     community = Community.objects.get(pk=community_id)
-    comment_messages = Board.objects.filter(community=community)
+    comment_messages = Opinion.objects.filter(community=community)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -236,3 +320,4 @@ def generate_wordcloud(request, community_id):
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
+
