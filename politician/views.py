@@ -19,6 +19,7 @@ import io, os, matplotlib, PIL
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
+from http import HTTPStatus
 
 # Create your views here.
 
@@ -37,61 +38,28 @@ def politician_list_by_poly(request, poly_nm):
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 10, # 다시 100으로 수정하면 jpg_link 가져오는데 에러 뜸 # 10개가 최대인 듯
-        'POLY_NM': poly_nm
+        'pSize': 50,
+        'POLY_NM': poly_nm,
+        'ORIG_NM': '서울'
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
     for i in range(len(data['row'])):
-        params = { # 불러온 데이터에 한해서 이름이 동일한 정치인별 프로필 이미지 가져오기
-            'serviceKey': PROFILE_IMAGE_API_KEY,
-            'numOfRows': 10,
-            'pageNo': 1,
-            'hgnm': data['row'][i]['HG_NM'] # '홍익표'
-        }
-        response = requests.get(profile_image_url, params=params)
-        data_dict = {}
-        data_dict = xmltodict.parse(response.content)
-
-        # Convert dictionary to JSON
-        json_result = json.dumps(data_dict, indent=2, ensure_ascii=False)
-
-        # print(json_result)
-        jpg_link = data_dict['response']['body']['items']['item']['jpgLink']
-        
-        save_image(jpg_link, data['row'][i]['MONA_CD'])
-
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
     return Response(result)
 
 @api_view(['GET'])
 def politician_list_by_orig(request, orig_nm):
-    # --- 투표구 수 및 선거인수 조회 관련 API 사용 ---
-    # 값이 강서구 데이터밖에 없는 것 같음
-    # params = {
-    #     'serviceKey': ELECTORS_NUMBER_API_KEY,
-    #     'pageNo': '1',
-    #     'numOfRows': '5',
-    #     'resultType': 'json',
-    #     'sgId': '20231011',
-    #     'sgTypecode': '4',
-    #     'sdName': '서울특별시',
-    #     'wiwName': '강동구'
-    # }
-    # params ={'serviceKey' : ELECTORS_NUMBER_API_KEY, 'pageNo' : '1', 'numOfRows' : '10', 'resultType' : 'json', 'sgId' : '20231011', 'sgTypecode' : '4', 'sdName' : '서울특별시', 'wiwName' : '강동구' }
-    # response = requests.get(electors_number_url, params=params)
-    # response = json.loads(response)
-    # data = response.json() # 계속해서 JSONDecodeError 발생
-    # return Response(response)
-    
     # --- 선거구별 정치인 조회 API 사용 ---
     params = {
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 100,
+        'pSize': 5,
         'ORIG_NM': orig_nm
     }
     response = requests.get(personal_data_url, params=params)
@@ -100,7 +68,9 @@ def politician_list_by_orig(request, orig_nm):
     result = []
     count = 0
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
         if data['row'][i]['POLY_NM'] == '더불어민주당':
             count += 1
         elif data['row'][i]['POLY_NM'] == '국민의힘':
@@ -121,15 +91,18 @@ def politician_list_by_hgnm(request, hg_nm):
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 100,
-        'HG_NM': hg_nm
+        'pSize': 5,
+        'HG_NM': hg_nm,
+        'ORIG_NM': '서울'
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
     
     return Response(result)
 
@@ -162,30 +135,10 @@ def politician_list_by_mona(request, mona_cd):
                        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 
                        'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 
                        'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 
-                       'MEM_TITLE': data['row'][i]['MEM_TITLE']})
+                       'MEM_TITLE': data['row'][i]['MEM_TITLE'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
         for j in range(len(bill_data['row'])):
             result.append({'BILL_NAME': bill_data['row'][j]['BILL_NAME'], 'DETAIL_LINK': bill_data['row'][j]['DETAIL_LINK']})
     return Response(result)
-
-def save_image(image_url, mona_cd):
-    image_url = image_url
-    
-    filename = default_storage.get_available_name(mona_cd + ".jpg")
-    
-    # Check if the file already exists
-    if default_storage.exists(filename):
-        # File already exists, use the existing file
-        media_url = default_storage.url(filename)
-        # return JsonResponse({"media_url": media_url})
-    
-    response = requests.get(image_url)
-    
-    if response.status_code == 200:
-        with default_storage.open(filename, "wb") as f:
-            f.write(response.content)
-        
-        media_url = default_storage.url(filename)
-
 
 class CommunityViewSet(viewsets.ModelViewSet):
     queryset = Community.objects.all()
@@ -302,3 +255,51 @@ class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
 
+# 국회의원별 프로필 이미지 저장 코드(파일명 국희의원 코드로 저장)
+# def save_image(request):
+#     params = {
+#         'KEY': PERSONAL_DATA_API_KEY,
+#         'Type': 'json',
+#         'pIndex': 1,
+#         'pSize': 50,
+#         'ORIG_NM': '서울'
+#     }
+#     response = requests.get(personal_data_url, params=params)
+#     data = response.json()['nwvrqwxyaytdsfvhu'][1]
+    
+#     result = []
+#     for i in range(len(data['row'])):
+#         params = { # 불러온 데이터에 한해서 이름이 동일한 정치인별 프로필 이미지 가져오기
+#             'serviceKey': PROFILE_IMAGE_API_KEY,
+#             'numOfRows': 1,
+#             'pageNo': 1,
+#             'hgnm': data['row'][i]['HG_NM']
+#         }
+#         response = requests.get(profile_image_url, params=params)
+#         data_dict = {}
+#         data_dict = xmltodict.parse(response.content)
+
+#         # Convert dictionary to JSON
+#         json_result = json.dumps(data_dict, indent=2, ensure_ascii=False)
+
+#         # print(json_result)
+#         jpg_link = data_dict['response']['body']['items']['item']['jpgLink']
+#         image_url = jpg_link
+        
+#         filename = default_storage.get_available_name(data['row'][i]['MONA_CD'] + ".jpg")
+        
+#         # Check if the file already exists
+#         if default_storage.exists(filename):
+#             # File already exists, use the existing file
+#             media_url = default_storage.url(filename)
+#             # return JsonResponse({"media_url": media_url})
+        
+#         response = requests.get(image_url)
+        
+#         if response.status_code == 200:
+#             with default_storage.open(filename, "wb") as f:
+#                 f.write(response.content)
+            
+#             media_url = default_storage.url(filename)
+
+#     return Response(response.status_code)
