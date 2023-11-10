@@ -29,6 +29,7 @@ PROFILE_IMAGE_API_KEY = settings.PROFILE_IMAGE_API_KEY
 personal_data_url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
 # electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
 profile_image_url = 'http://apis.data.go.kr/9710000/NationalAssemblyInfoService/getMemberNameInfoList'
+bill_data_url = 'https://open.assembly.go.kr/portal/openapi/nzmimeepazxkubdpn'
 
 @api_view(['GET'])
 def politician_list_by_poly(request, poly_nm):
@@ -146,8 +147,24 @@ def politician_list_by_mona(request, mona_cd):
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 'MEM_TITLE': data['row'][i]['MEM_TITLE']})
-    
+        # 국회의원별 발의법률안
+        params = {
+            'KEY': PERSONAL_DATA_API_KEY,
+            'Type': 'json',
+            'pIndex': 1,
+            'pSize': 100,
+            'AGE': '21',
+            'PROPOSER': data['row'][i]['HG_NM']
+        }
+        response = requests.get(bill_data_url, params=params)
+        bill_data = response.json()['nzmimeepazxkubdpn'][1]
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+                       'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 
+                       'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 
+                       'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 
+                       'MEM_TITLE': data['row'][i]['MEM_TITLE']})
+        for j in range(len(bill_data['row'])):
+            result.append({'BILL_NAME': bill_data['row'][j]['BILL_NAME'], 'DETAIL_LINK': bill_data['row'][j]['DETAIL_LINK']})
     return Response(result)
 
 def save_image(image_url, mona_cd):
@@ -211,6 +228,26 @@ class BoardViewSet(viewsets.ModelViewSet):
 
         return Response(data)
     
+
+class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+
+    def list(self, request, community_id=None):
+        community = get_object_or_404(Community, community_id=community_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request, community_id=None):
+        community = get_object_or_404(Community, id=community_id)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(community=community)
+        return Response(serializer.data)
+
+
+
 def generate_wordcloud(request, community_id):
     community = Community.objects.get(pk=community_id)
     comment_messages = Board.objects.filter(community=community)
