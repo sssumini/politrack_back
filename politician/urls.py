@@ -3,7 +3,7 @@ from .views import *
 from . import views
 from rest_framework import routers
 from django.conf import settings
-from .views import CommunityViewSet, BoardViewSet
+from .views import CommunityViewSet, BoardViewSet, CommunityBoardViewSet
 
 app_name="politician"
 
@@ -18,6 +18,7 @@ board_router.register("communitydetail",BoardViewSet, basename="communitydetail"
 
 community_board_router = routers.SimpleRouter()
 community_board_router.register("detail",CommunityBoardViewSet, basename="detail")
+
 
 opinion_router = routers.SimpleRouter()
 opinion_router.register("opinion",OpinionViewSet, basename="opinion")
