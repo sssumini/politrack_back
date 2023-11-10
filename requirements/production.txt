@@ -29,6 +29,7 @@ typing-extensions==4.8.0
 tzdata==2023.3
 urllib3==1.26.18
 wordcloud==1.9.2
+xmltodict==0.13.0
 zipp==3.17.0
 
 gunicorn
