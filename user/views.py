@@ -30,6 +30,8 @@ class RegisterView(generics.CreateAPIView):
     
 class LoginView(APIView):
     permission_classes = [ AllowAny ]
+    queryset = User.objects.all()
+    serializer_class = UserLoginSerializer
 
     def post(self, request):
         user = authenticate(
@@ -58,6 +60,8 @@ class LoginView(APIView):
 # 로그아웃
 class LogoutView(APIView):
     # # permission_classes = (IsAuthenticated,)
+    queryset = User.objects.all()
+    serializer_class = RefreshTokenSerializer
 
     def post(self, request):
         try:

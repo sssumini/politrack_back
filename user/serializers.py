@@ -45,24 +45,26 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        fields = ('user_id', 'password')
         
 class RefreshTokenSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+    class Meta:
+        model = User
+        fields = ('refresh')
+    # default_error_messages = {
+    #     'bad_token': 'Token is invalid or expired'
+    # }
 
-    default_error_messages = {
-        'bad_token': 'Token is invalid or expired'
-    }
+    # def validate(self, attrs):
+    #     self.token = attrs['refresh']
+    #     return attrs
 
-    def validate(self, attrs):
-        self.token = attrs['refresh']
-        return attrs
-
-    def save(self, **kwargs):
-        try:
-            RefreshToken(self.token).blacklist()
-        except TokenError:
-            self.fail('bad_token')
+    # def save(self, **kwargs):
+    #     try:
+    #         RefreshToken(self.token).blacklist()
+    #     except TokenError:
+    #         self.fail('bad_token')
 
 # 계정 확인용 시리얼라이저
 class UserDetailSerializer(serializers.ModelSerializer):
