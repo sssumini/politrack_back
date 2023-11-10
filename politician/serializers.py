@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import *
-from politician.models import Community, Board, Quiz
+from politician.models import Community, Board, Quiz, Opinion
 
 class CommunitySerializer(serializers.ModelSerializer):
     formatted_created_at = serializers.DateTimeField(source='created_at', format='%Y.%m.%d, %H:%M:%S', read_only=True)
@@ -19,6 +19,15 @@ class BoardSerializer(serializers.ModelSerializer):
         model = Board
         fields = '__all__'
         #fields = ('title', 'content', 'created_at','deadline')
+
+
+class OpinionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Opinion
+        fields = '__all__'
+        #fields = ('title', 'content', 'created_at','deadline')
+
 
 
 class QuizSerializer(serializers.ModelSerializer):

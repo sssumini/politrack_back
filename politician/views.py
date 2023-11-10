@@ -2,8 +2,8 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board, Quiz
-from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer
+from .models import Community, Board, Quiz, Opinion
+from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer, OpinionSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
 from django.conf import settings
@@ -147,28 +147,7 @@ class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    @action(detail=True, methods=['GET'])
-    def result(self, request, pk, community_id):
-        total_count = Board.objects.count()
-        option1_count = Board.objects.filter(pick='option1').count()
-        option2_count = Board.objects.filter(pick='option2').count()
-        option3_count = Board.objects.filter(pick='option3').count()
-        
-        pick_title = Board.objects.filter(pk=pk).values('pick_title').first()
 
-        option1_percentage = round((option1_count / total_count) * 100,1)
-        option2_percentage = round((option2_count / total_count) * 100,1)
-        option3_percentage = round((option3_count / total_count) * 100,1)
-        
-        data = {
-            'option1_count': option1_percentage,
-            'option2_count': option2_percentage,
-            'option3_count': option3_percentage,
-            'pick_title': pick_title['pick_title'],
-        }
-
-        return Response(data)
-    
 
 class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
     queryset = Board.objects.all()
@@ -181,17 +160,43 @@ class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixi
         return Response(serializer.data)
     
     def create(self, request, community_id=None):
-        community = get_object_or_404(Community, id=community_id)
+        community = get_object_or_404(Community, community_id=community_id)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(community=community)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['GET'])
+    def result(self, request, community_id=None):
+        total_count = Board.objects.filter(community_id=community_id).count()
+        option1_count = Board.objects.filter(community_id=community_id, pick='option1').count()
+        option2_count = Board.objects.filter(community_id=community_id,pick='option2').count()
+        option3_count = Board.objects.filter(community_id=community_id,pick='option3').count()
+        
+        pick_title = Board.objects.filter(community_id=community_id).values('pick_title').first()
 
+        option1_percentage = round((option1_count / total_count) * 100,1)
+        option2_percentage = round((option2_count / total_count) * 100,1)
+        option3_percentage = round((option3_count / total_count) * 100,1)
+        
+        data = {
+            'option1_count': option1_percentage,
+            'option2_count': option2_percentage,
+            'option3_count': option3_percentage,
+            'pick_title': pick_title['pick_title'] if pick_title else None,
+        }
+
+        return Response(data)
+    
+
+class OpinionViewSet(viewsets.ModelViewSet):
+    queryset = Opinion.objects.all()
+    serializer_class = OpinionSerializer
 
 
 def generate_wordcloud(request, community_id):
     community = Community.objects.get(pk=community_id)
-    comment_messages = Board.objects.filter(community=community)
+    comment_messages = Opinion.objects.filter(community=community)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -237,3 +242,4 @@ def generate_wordcloud(request, community_id):
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
+

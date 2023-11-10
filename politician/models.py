@@ -21,17 +21,22 @@ class Board(models.Model):
     idea_a_des = models.TextField(max_length=300,blank=True)
     idea_b_des = models.TextField(max_length=300,blank=True)
     idea_c_des = models.TextField(max_length=300,blank=True)
-    comment = models.TextField(max_length=300,blank=False)
+    #comment = models.TextField(max_length=300,blank=False)
+
     pick_title = models.TextField(max_length=300,blank=True)
-
-
     PICK_CHOICES = [
         ('option1', 'Option 1'),
         ('option2', 'Option 2'),
         ('option3', 'Option 3'),
     ]
-    pick = models.CharField(max_length=10, choices=PICK_CHOICES)
+    pick = models.CharField(max_length=10, choices=PICK_CHOICES,blank=True)
+    
 
+
+class Opinion(models.Model):
+    opinion_id = models.AutoField(primary_key=True)
+    community = models.ForeignKey(Community, related_name='opinion', blank=False, null=False, on_delete=models.CASCADE, default=3)
+    comment = models.TextField(max_length=300,blank=False)
 
 
 class Quiz(models.Model):
