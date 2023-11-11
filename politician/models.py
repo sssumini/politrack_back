@@ -24,9 +24,9 @@ class Board(models.Model):
 
     pick_title = models.TextField(max_length=300,blank=True)
     PICK_CHOICES = [
-        ('option1', '좋은 것 같아!'),
-        ('option2', '난 별로,,,'),
-        ('option3', '질 모르겠어'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
+        ('option3', 'Option3'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES,blank=True)
     
@@ -44,14 +44,14 @@ class Quiz(models.Model):
     description = models.CharField(max_length=100,blank=True)
     pick_title = models.TextField(max_length=300,blank=True)
     PICK_CHOICES = [
-        ('option1', 'O'),
-        ('option2', 'X'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES)
 
     ANSWER_CHOICES = [
-        ('option1', 'O'),
-        ('option2', 'X'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
     ]
     answer = models.CharField(max_length=10, choices=ANSWER_CHOICES)
     answer_des = models.TextField(max_length=300,blank=True)
