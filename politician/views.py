@@ -2,7 +2,7 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board, Quiz, Opinion
+from .models import Community, Board, Quiz, Opinion, OrigDetail
 from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer, OpinionSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
@@ -66,15 +66,22 @@ def politician_list_by_orig(request, orig_nm):
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
+    try:
+        orig_detail = OrigDetail.objects.get(orig_nm=orig_nm)
+        # 선거구별 투표구수, 선거인수 return
+        result.append({'tpgCount': orig_detail.tpgCount, 'cfmtnElcnt': orig_detail.cfmtnElcnt})
+    except OrigDetail.DoesNotExist:
+        pass
+
     count = 0
     for i in range(len(data['row'])):
         result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
         'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
         'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
-        if data['row'][i]['POLY_NM'] == '더불어민주당':
-            count += 1
-        elif data['row'][i]['POLY_NM'] == '국민의힘':
-            count -= 1
+    if data['row'][i]['POLY_NM'] == '더불어민주당':
+        count += 1
+    elif data['row'][i]['POLY_NM'] == '국민의힘':
+        count -= 1
     
     if count == len(data['row']):
         result.append({'vict_poly': 1}) # 더불어민주당 승리구일 경우
