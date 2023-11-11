@@ -214,7 +214,7 @@ def generate_wordcloud(request, community_id):
     font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
     wordcloud = WordCloud(
         width=400, height=400, 
-        max_font_size=200, 
+        max_font_size=150, 
         background_color='white', 
         font_path=font_path, 
         prefer_horizontal = False,
