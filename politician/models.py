@@ -55,3 +55,8 @@ class Quiz(models.Model):
     ]
     answer = models.CharField(max_length=10, choices=ANSWER_CHOICES)
     answer_des = models.TextField(max_length=300,blank=True)
+
+class OrigDetail(models.Model):
+    orig_nm = models.CharField(max_length=10, unique=True, null=False, blank=False) # 선거구
+    tpgCount = models.IntegerField(default=0) # 투표구수
+    cfmtnElcnt = models.IntegerField(default=0) # 선거인수

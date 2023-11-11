@@ -17,3 +17,7 @@ class OpinionModelAdmin(admin.ModelAdmin):
 @admin.register(Quiz)
 class QuizModelAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(OrigDetail)
+class OrigDetailModelAdmin(admin.ModelAdmin):
+    pass
