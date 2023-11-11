@@ -21,13 +21,11 @@ class Board(models.Model):
     idea_a_des = models.TextField(max_length=300,blank=True)
     idea_b_des = models.TextField(max_length=300,blank=True)
     idea_c_des = models.TextField(max_length=300,blank=True)
-    comment = models.TextField(max_length=300,blank=False)
-
     pick_title = models.TextField(max_length=300,blank=True)
     PICK_CHOICES = [
-        ('option1', 'Option 1'),
-        ('option2', 'Option 2'),
-        ('option3', 'Option 3'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
+        ('option3', 'Option3'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES,blank=True)
     
@@ -36,6 +34,7 @@ class Board(models.Model):
 class Opinion(models.Model):
     opinion_id = models.AutoField(primary_key=True)
     community = models.ForeignKey(Community, related_name='opinion', blank=False, null=False, on_delete=models.CASCADE, default=3)
+    #user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     comment = models.TextField(max_length=300,blank=False)
 
 
@@ -44,14 +43,14 @@ class Quiz(models.Model):
     description = models.CharField(max_length=100,blank=True)
     pick_title = models.TextField(max_length=300,blank=True)
     PICK_CHOICES = [
-        ('option1', 'Option 1'),
-        ('option2', 'Option 2'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES)
 
     ANSWER_CHOICES = [
-        ('option1', 'Option 1'),
-        ('option2', 'Option 2'),
+        ('option1', 'Option1'),
+        ('option2', 'Option2'),
     ]
     answer = models.CharField(max_length=10, choices=ANSWER_CHOICES)
     answer_des = models.TextField(max_length=300,blank=True)

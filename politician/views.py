@@ -213,6 +213,25 @@ class OpinionViewSet(viewsets.ModelViewSet):
     serializer_class = OpinionSerializer
 
 
+class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
+
+    def list(self, request, community_id=None):
+        community = get_object_or_404(Community, community_id=community_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request, community_id=None):
+        community = get_object_or_404(Community, id=community_id)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(community=community)
+        return Response(serializer.data)
+
+
+      
 def generate_wordcloud(request, community_id):
     community = Community.objects.get(pk=community_id)
     comment_messages = Opinion.objects.filter(community=community)
@@ -233,7 +252,7 @@ def generate_wordcloud(request, community_id):
     font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
     wordcloud = WordCloud(
         width=400, height=400, 
-        max_font_size=200, 
+        max_font_size=150, 
         background_color='white', 
         font_path=font_path, 
         prefer_horizontal = False,
