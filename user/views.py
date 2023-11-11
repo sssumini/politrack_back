@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
@@ -13,92 +13,72 @@ from rest_framework.renderers import JSONRenderer
 import jwt, datetime
 from datetime import datetime, timedelta, timezone
 
-# 회원가입
-class UserRegisterView(APIView):
-    queryset = User.objects.all()
-    serializer_class = UserRegisterSerializer
-    def post(self, req):
-        serializer = UserRegisterSerializer(data=req.data)
-        
-        if serializer.is_valid():
-            serializer.save()
+from django.shortcuts import render
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import generics
 
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# 회원가입
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = RegisterSerializer
     
-# 로그인
-class UserLoginView(APIView):
+class LoginView(APIView):
+    permission_classes = [ AllowAny ]
     queryset = User.objects.all()
     serializer_class = UserLoginSerializer
-    def post(self,req):
-        serializer = UserLoginSerializer(data=req.data)
-        serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data['user_id']
+    def post(self, request):
+        user = authenticate(
+            user_id = request.data.get("user_id"),
+            password = request.data.get("password"),
+        )
+        if user:
+            login_serializer = UserLoginSerializer(user)
+            token = TokenObtainPairSerializer.get_token(user)
+            refresh_token = str(token)
+            access_token = str(token.access_token)
 
-        if user is None :
-            raise AuthenticationFailed('잘못된 아이디입니다.')
-        
-        current_time = datetime.now(timezone.utc)
-        expiration_time = current_time + timedelta(minutes=60)
-
-        ## JWT 구현 부분
-        payload = {
-            'id' : user,
-            'exp' : expiration_time,
-            'iat' : current_time
-        }
-
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256") # .decode("utf-8")
-
-        res = Response()
-        res.set_cookie(key='jwt', value=token, httponly=True)
-        res.data = {
-            'jwt' : token
-        }
-        return res
+            response = Response(
+                {
+                    "user_id": login_serializer.data['user_id'],
+                    "token": {
+                        "access": access_token,
+                        "refresh": refresh_token,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+            return response
+        return Response(status=status.HTTP_400_BAD_REQUEST)
     
 # 로그아웃
-class UserLogoutView(APIView):
-    # permission_classes = [IsAuthenticated]
-    def post(self,req):
-        token = req.COOKIES.get('jwt')
-
-        if not token :
-            raise AuthenticationFailed('UnAuthenticated!')
-
-        try :
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('UnAuthenticated!')
-
-        res = Response()
-        res.delete_cookie('jwt')
-        res.data = {
-            "message" : 'success'
-        }
-        return res
-    
-class UserDetailView(APIView):
-    # permission_classes = [IsAuthenticated]
+class LogoutView(APIView):
+    # # permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
-    serializer_class = UserDetailSerializer
+    serializer_class = RefreshTokenSerializer
 
-    def get(self,req):
-        token = req.COOKIES.get('jwt')
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
 
-        if not token :
-            raise AuthenticationFailed('UnAuthenticated!')
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": "Invalid refresh token or token has already been used."}, status=status.HTTP_400_BAD_REQUEST)
+    # permission_classes = [ IsAuthenticated ]
 
-        try :
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('UnAuthenticated!')
-
-        user = User.objects.get(user_id=payload['id'])
-        
-        serializer = UserDetailSerializer(user)
-
-        return Response(serializer.data)
+    # def post(self, request, *args):
+    #     user = RefreshTokenSerializer(data=request.data)
+    #     user.is_valid(raise_exception=True)
+    #     user.save()
+    #     return Response(
+    #             {
+    #                "message": "logout success" 
+    #             }, status=status.HTTP_204_NO_CONTENT)
