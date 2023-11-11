@@ -35,6 +35,5 @@ urlpatterns = [
     path('id/<str:mona_cd>', views.politician_list_by_mona),
     # path('save_image', views.save_image),
     path("community/<int:community_id>/", include(community_board_router.urls)),
-    path("politician/community/<int:community_id>/detail/result/", CommunityBoardViewSet.as_view({'get': 'result'}), name='community-board-result'),
     path('community/<int:community_id>/wordcloud', views.generate_wordcloud, name='generate_wordcloud'),
 ]
