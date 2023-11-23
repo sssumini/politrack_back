@@ -27,7 +27,7 @@ PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
 # ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
 PROFILE_IMAGE_API_KEY = settings.PROFILE_IMAGE_API_KEY
 
-personal_data_url = 'https://open.assembly.go.kr/ mportal/openapi/nwvrqwxyaytdsfvhu'
+personal_data_url = 'https://open.assembly.go.kr/ portal/openapi/nwvrqwxyaytdsfvhu'
 # electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
 profile_image_url = 'http://apis.data.go.kr/9710000/NationalAssemblyInfoService/getMemberNameInfoList'
 bill_data_url = 'https://open.assembly.go.kr/portal/openapi/nzmimeepazxkubdpn'
