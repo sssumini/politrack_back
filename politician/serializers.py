@@ -3,8 +3,8 @@ from rest_framework import serializers
 from politician.models import Community, Board, Quiz, Opinion
 
 class CommunitySerializer(serializers.ModelSerializer):
-    formatted_created_at = serializers.DateTimeField(source='created_at', format='%Y.%m.%d, %H:%M:%S', read_only=True)
-    formatted_deadline = serializers.DateTimeField(source='deadline', format='%Y.%m.%d, %H:%M:%S', read_only=True)
+    formatted_created_at = serializers.DateTimeField(source='created_at', format='%Y.%m.%d, %H:%M:%S', read_only=False)
+    formatted_deadline = serializers.DateTimeField(source='deadline', format='%Y.%m.%d, %H:%M:%S', read_only=False)
 
 
     class Meta:
@@ -27,7 +27,6 @@ class OpinionSerializer(serializers.ModelSerializer):
         model = Opinion
         fields = '__all__'
         #fields = ('title', 'content', 'created_at','deadline')
-
 
 
 class QuizSerializer(serializers.ModelSerializer):

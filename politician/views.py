@@ -222,11 +222,10 @@ class OpinionViewSet(viewsets.ModelViewSet):
 #     result = hangul.sub('', text) # 불필요한 .^ 등의 표현 제거
 #     return result
 
-
       
-def generate_wordcloud(request, community_id):
+def generate_wordcloud_good(request, community_id, pick_value='option1'):
     community = Community.objects.get(pk=community_id)
-    comment_messages = Opinion.objects.filter(community=community)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -255,10 +254,13 @@ def generate_wordcloud(request, community_id):
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
-    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_good{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.wordcloud_image_path = f'wordcloud/wordcloud_good{community_id}.png'
     community.save()
 
     buf = io.BytesIO()
@@ -270,6 +272,109 @@ def generate_wordcloud(request, community_id):
     buf.seek(0)
 
     return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
+
+def generate_wordcloud_soso(request, community_id, pick_value='option2'):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_soso{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud/wordcloud_soso{community_id}.png'
+    community.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
+
+
+
+def generate_wordcloud_bad(request, community_id, pick_value='option3'):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_bad{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud/wordcloud_bad{community_id}.png'
+    community.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
 
 
 class QuizViewSet(viewsets.ModelViewSet):

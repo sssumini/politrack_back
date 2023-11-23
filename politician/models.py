@@ -7,9 +7,9 @@ class Community(models.Model):
     community_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=300)
-    created_at = models.DateTimeField(auto_now_add=True)
-    deadline = models.DateTimeField(default=timezone.now()+timezone.timedelta(days=7),editable=False)
-
+    created_at = models.DateTimeField()
+    deadline = models.DateTimeField()
+ 
 
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
@@ -28,6 +28,7 @@ class Board(models.Model):
         ('option3', 'Option3'),
     ]
     pick = models.CharField(max_length=10, choices=PICK_CHOICES,blank=True)
+    comment = models.TextField(max_length=300,blank=False,null=False, default=3)
     
 
 
@@ -36,6 +37,7 @@ class Opinion(models.Model):
     community = models.ForeignKey(Community, related_name='opinion', blank=False, null=False, on_delete=models.CASCADE, default=3)
     #user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     comment = models.TextField(max_length=300,blank=False)
+
 
 
 class Quiz(models.Model):
