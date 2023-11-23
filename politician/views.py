@@ -27,7 +27,7 @@ PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
 # ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
 PROFILE_IMAGE_API_KEY = settings.PROFILE_IMAGE_API_KEY
 
-personal_data_url = 'https://open.assembly.go.kr/portal/openapi/nwvrqwxyaytdsfvhu'
+personal_data_url = 'https://open.assembly.go.kr/ mportal/openapi/nwvrqwxyaytdsfvhu'
 # electors_number_url = 'http://apis.data.go.kr/9760000/ElcntInfoInqireService/getElpcElcntInfoInqire'
 profile_image_url = 'http://apis.data.go.kr/9710000/NationalAssemblyInfoService/getMemberNameInfoList'
 bill_data_url = 'https://open.assembly.go.kr/portal/openapi/nzmimeepazxkubdpn'
@@ -214,11 +214,10 @@ class OpinionViewSet(viewsets.ModelViewSet):
     serializer_class = OpinionSerializer
 
 
-
       
-def generate_wordcloud(request, community_id):
+def generate_wordcloud_good(request, community_id, pick_value='option1'):
     community = Community.objects.get(pk=community_id)
-    comment_messages = Opinion.objects.filter(community=community)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -259,6 +258,101 @@ def generate_wordcloud(request, community_id):
     buf.seek(0)
 
     return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
+
+def generate_wordcloud_soso(request, community_id, pick_value='option2'):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
+
+
+
+def generate_wordcloud_bad(request, community_id, pick_value='option3'):
+    community = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
 
 
 class QuizViewSet(viewsets.ModelViewSet):
