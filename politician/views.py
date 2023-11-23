@@ -21,6 +21,10 @@ from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from http import HTTPStatus
 
+# from konlpy.tag import Okt
+# from collections import Counter
+# import re
+
 # Create your views here.
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
@@ -64,7 +68,7 @@ def politician_list_by_orig(request, orig_nm):
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
-    
+
     result = []
     try:
         orig_detail = OrigDetail.objects.get(orig_nm=orig_nm)
@@ -78,10 +82,10 @@ def politician_list_by_orig(request, orig_nm):
         result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
         'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
         'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
-    if data['row'][i]['POLY_NM'] == '더불어민주당':
-        count += 1
-    elif data['row'][i]['POLY_NM'] == '국민의힘':
-        count -= 1
+        if data['row'][i]['POLY_NM'] == '더불어민주당':
+            count += 1
+        elif data['row'][i]['POLY_NM'] == '국민의힘':
+            count -= 1
     
     if count == len(data['row']):
         result.append({'vict_poly': 1}) # 더불어민주당 승리구일 경우
@@ -212,6 +216,10 @@ class OpinionViewSet(viewsets.ModelViewSet):
     queryset = Opinion.objects.all()
     serializer_class = OpinionSerializer
 
+# def apply_regular_expression(text):
+#     hangul = re.compile('[^ ㄱ-ㅣ 가-힣]')
+#     result = hangul.sub('', text) # 불필요한 .^ 등의 표현 제거
+#     return result
 
 def generate_wordcloud(request, community_id):
     community = Community.objects.get(pk=community_id)
@@ -223,12 +231,15 @@ def generate_wordcloud(request, community_id):
 
     for message in comment_messages:
         words = message.comment.split()  # 공백을 기준으로 단어 분리
+        # okt = Okt()  # 명사 형태소 추출 함수
+        # words = okt.nouns(apply_regular_expression(message))
         for word in words:
             if word not in excluded_words:
                 if word in word_frequencies:
                     word_frequencies[word] += 1
                 else:
                     word_frequencies[word] = 1
+
     project_root = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
     wordcloud = WordCloud(
@@ -261,52 +272,3 @@ def generate_wordcloud(request, community_id):
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
-
-# 국회의원별 프로필 이미지 저장 코드(파일명 국희의원 코드로 저장)
-# def save_image(request):
-#     params = {
-#         'KEY': PERSONAL_DATA_API_KEY,
-#         'Type': 'json',
-#         'pIndex': 1,
-#         'pSize': 50,
-#         'ORIG_NM': '서울'
-#     }
-#     response = requests.get(personal_data_url, params=params)
-#     data = response.json()['nwvrqwxyaytdsfvhu'][1]
-    
-#     result = []
-#     for i in range(len(data['row'])):
-#         params = { # 불러온 데이터에 한해서 이름이 동일한 정치인별 프로필 이미지 가져오기
-#             'serviceKey': PROFILE_IMAGE_API_KEY,
-#             'numOfRows': 1,
-#             'pageNo': 1,
-#             'hgnm': data['row'][i]['HG_NM']
-#         }
-#         response = requests.get(profile_image_url, params=params)
-#         data_dict = {}
-#         data_dict = xmltodict.parse(response.content)
-
-#         # Convert dictionary to JSON
-#         json_result = json.dumps(data_dict, indent=2, ensure_ascii=False)
-
-#         # print(json_result)
-#         jpg_link = data_dict['response']['body']['items']['item']['jpgLink']
-#         image_url = jpg_link
-        
-#         filename = default_storage.get_available_name(data['row'][i]['MONA_CD'] + ".jpg")
-        
-#         # Check if the file already exists
-#         if default_storage.exists(filename):
-#             # File already exists, use the existing file
-#             media_url = default_storage.url(filename)
-#             # return JsonResponse({"media_url": media_url})
-        
-#         response = requests.get(image_url)
-        
-#         if response.status_code == 200:
-#             with default_storage.open(filename, "wb") as f:
-#                 f.write(response.content)
-            
-#             media_url = default_storage.url(filename)
-
-#     return Response(response.status_code)
