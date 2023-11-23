@@ -243,10 +243,13 @@ def generate_wordcloud_good(request, community_id, pick_value='option1'):
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
-    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_good{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.wordcloud_image_path = f'wordcloud/wordcloud_good{community_id}.png'
     community.save()
 
     buf = io.BytesIO()
@@ -290,10 +293,14 @@ def generate_wordcloud_soso(request, community_id, pick_value='option2'):
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
-    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_soso{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.wordcloud_image_path = f'wordcloud/wordcloud_soso{community_id}.png'
     community.save()
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
@@ -338,10 +345,14 @@ def generate_wordcloud_bad(request, community_id, pick_value='option3'):
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
-    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_bad{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
+    community.wordcloud_image_path = f'wordcloud/wordcloud_bad{community_id}.png'
     community.save()
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
