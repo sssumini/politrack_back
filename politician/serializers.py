@@ -18,20 +18,17 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = '__all__'
-        #fields = ('title', 'content', 'created_at','deadline')
-
+  
 
 class OpinionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Opinion
         fields = '__all__'
-        #fields = ('title', 'content', 'created_at','deadline')
-
+     
 
 class QuizSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
         fields = '__all__'
-        #fields = ('title', 'content', 'created_at','deadline')
