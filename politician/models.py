@@ -34,7 +34,7 @@ class Board(models.Model):
 
 class Opinion(models.Model):
     opinion_id = models.AutoField(primary_key=True)
-    community = models.ForeignKey(Community, related_name='opinion', blank=False, null=False, on_delete=models.CASCADE)
+    community = models.OneToOneField(Community, related_name='opinion', blank=False, null=False, on_delete=models.CASCADE)
     #user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     title_1 = models.CharField(max_length=100, blank=True)
     title_2 = models.CharField(max_length=100, blank=True)
