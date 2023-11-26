@@ -224,8 +224,8 @@ class OpinionViewSet(viewsets.ModelViewSet):
 
       
 def generate_wordcloud_good(request, community_id, pick_value='option1'):
-    community = Community.objects.get(pk=community_id)
-    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -260,8 +260,8 @@ def generate_wordcloud_good(request, community_id, pick_value='option1'):
     image_file_path = os.path.join(wordcloud_folder, f'wordcloud_good{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud/wordcloud_good{community_id}.png'
-    community.save()
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_good{community_id}.png'
+    community_id.save()
 
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
@@ -277,8 +277,8 @@ def generate_wordcloud_good(request, community_id, pick_value='option1'):
 
 
 def generate_wordcloud_soso(request, community_id, pick_value='option2'):
-    community = Community.objects.get(pk=community_id)
-    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -311,8 +311,8 @@ def generate_wordcloud_soso(request, community_id, pick_value='option2'):
     image_file_path = os.path.join(wordcloud_folder, f'wordcloud_soso{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud/wordcloud_soso{community_id}.png'
-    community.save()
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_soso{community_id}.png'
+    community_id.save()
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
     plt.imshow(wordcloud, interpolation="bilinear")
@@ -329,8 +329,8 @@ def generate_wordcloud_soso(request, community_id, pick_value='option2'):
 
 
 def generate_wordcloud_bad(request, community_id, pick_value='option3'):
-    community = Community.objects.get(pk=community_id)
-    comment_messages = Board.objects.filter(community=community, pick=pick_value)
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
@@ -363,8 +363,8 @@ def generate_wordcloud_bad(request, community_id, pick_value='option3'):
     image_file_path = os.path.join(wordcloud_folder, f'wordcloud_bad{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud/wordcloud_bad{community_id}.png'
-    community.save()
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_bad{community_id}.png'
+    community_id.save()
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
     plt.imshow(wordcloud, interpolation="bilinear")
