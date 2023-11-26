@@ -195,16 +195,16 @@ class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixi
         return Response(data)
 
     def list(self, request, community_id=None):
-        community = get_object_or_404(Community, community_id=community_id)
-        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
+        community_id = get_object_or_404(Community, community_id=community_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(community_id=community_id))
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
     def create(self, request, community_id=None):
-        community = get_object_or_404(Community, community_id=community_id)
+        community_id = get_object_or_404(Community, community_id=community_id)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(community=community)
+        serializer.save(community_id=community_id)
         return Response(serializer.data)
     
     
