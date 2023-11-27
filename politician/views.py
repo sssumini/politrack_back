@@ -21,9 +21,9 @@ from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from http import HTTPStatus
 
-# from konlpy.tag import Okt
-# from collections import Counter
-# import re
+from konlpy.tag import Okt
+from collections import Counter
+import re
 
 # Create your views here.
 
@@ -217,11 +217,10 @@ class OpinionViewSet(viewsets.ModelViewSet):
     queryset = Opinion.objects.all()
     serializer_class = OpinionSerializer
 
-# def apply_regular_expression(text):
-#     hangul = re.compile('[^ ㄱ-ㅣ 가-힣]')
-#     result = hangul.sub('', text) # 불필요한 .^ 등의 표현 제거
-#     return result
-
+def apply_regular_expression(text):
+    hangul = re.compile('[^ ㄱ-ㅣ 가-힣]')
+    result = hangul.sub('', text) # 불필요한 .^ 등의 표현 제거
+    return result
       
 def generate_wordcloud_good(request, community_id, pick_value='option1'):
     community_id = Community.objects.get(pk=community_id)
@@ -232,9 +231,9 @@ def generate_wordcloud_good(request, community_id, pick_value='option1'):
     excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
 
     for message in comment_messages:
-        words = message.comment.split()  # 공백을 기준으로 단어 분리
-        # okt = Okt()  # 명사 형태소 추출 함수
-        # words = okt.nouns(apply_regular_expression(message))
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
         for word in words:
             if word not in excluded_words:
                 if word in word_frequencies:
@@ -285,7 +284,9 @@ def generate_wordcloud_soso(request, community_id, pick_value='option2'):
     excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
 
     for message in comment_messages:
-        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
         for word in words:
             if word not in excluded_words:
                 if word in word_frequencies:
@@ -337,7 +338,9 @@ def generate_wordcloud_bad(request, community_id, pick_value='option3'):
     excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
 
     for message in comment_messages:
-        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
         for word in words:
             if word not in excluded_words:
                 if word in word_frequencies:
