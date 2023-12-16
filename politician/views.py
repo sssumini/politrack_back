@@ -158,10 +158,10 @@ class CommunityViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         category = request.query_params.get('category')
         
-        if category == '전체':
-            communities = self.queryset.all()
-        else:
+        if category:
             communities = self.queryset.filter(category=category)
+        else:
+            communities = self.queryset.all()
         
         serializer = self.get_serializer(communities, many=True)
         return Response(serializer.data)
