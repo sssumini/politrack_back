@@ -155,6 +155,16 @@ class CommunityViewSet(viewsets.ModelViewSet):
     queryset = Community.objects.all()
     serializer_class = CommunitySerializer
 
+    def list(self, request, *args, **kwargs):
+        category = request.query_params.get('category')
+        
+        if category:
+            communities = self.queryset.filter(category=category)
+        
+        serializer = self.get_serializer(communities, many=True)
+        return Response(serializer.data)
+
+
 def create(self, request):
     serializer = self.get_serailizer(data=request.data)
     serializer.is_valid(raise_exception=True)
