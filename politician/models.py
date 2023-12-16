@@ -9,7 +9,7 @@ class Community(models.Model):
     content = models.TextField(max_length=300)
     created_at = models.DateTimeField()
     deadline = models.DateTimeField()
- 
+    category = models.CharField(max_length=20, default='전체')
 
 class Board(models.Model):
     board_id = models.AutoField(primary_key=True)
