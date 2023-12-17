@@ -178,4 +178,4 @@ secrets.json
 static/
 migrations/
 vevn/
-config/Config.py/
+config/
