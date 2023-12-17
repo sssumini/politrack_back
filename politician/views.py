@@ -2,7 +2,7 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
-from .models import Community, Board, Quiz, Opinion
+from .models import Community, Board, Quiz, Opinion, OrigDetail
 from .serializers import CommunitySerializer, BoardSerializer, QuizSerializer, OpinionSerializer
 from django.shortcuts import get_object_or_404, render, get_list_or_404
 from rest_framework import status
@@ -19,6 +19,11 @@ import io, os, matplotlib, PIL
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
+from http import HTTPStatus
+
+from konlpy.tag import Okt
+from collections import Counter
+import re
 
 # Create your views here.
 
@@ -37,70 +42,46 @@ def politician_list_by_poly(request, poly_nm):
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 10, # 다시 100으로 수정하면 jpg_link 가져오는데 에러 뜸 # 10개가 최대인 듯
-        'POLY_NM': poly_nm
+        'pSize': 50,
+        'POLY_NM': poly_nm,
+        'ORIG_NM': '서울'
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
     for i in range(len(data['row'])):
-        params = { # 불러온 데이터에 한해서 이름이 동일한 정치인별 프로필 이미지 가져오기
-            'serviceKey': PROFILE_IMAGE_API_KEY,
-            'numOfRows': 10,
-            'pageNo': 1,
-            'hgnm': data['row'][i]['HG_NM'] # '홍익표'
-        }
-        response = requests.get(profile_image_url, params=params)
-        data_dict = {}
-        data_dict = xmltodict.parse(response.content)
-
-        # Convert dictionary to JSON
-        json_result = json.dumps(data_dict, indent=2, ensure_ascii=False)
-
-        # print(json_result)
-        jpg_link = data_dict['response']['body']['items']['item']['jpgLink']
-        
-        save_image(jpg_link, data['row'][i]['MONA_CD'])
-
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
     return Response(result)
 
 @api_view(['GET'])
 def politician_list_by_orig(request, orig_nm):
-    # --- 투표구 수 및 선거인수 조회 관련 API 사용 ---
-    # 값이 강서구 데이터밖에 없는 것 같음
-    # params = {
-    #     'serviceKey': ELECTORS_NUMBER_API_KEY,
-    #     'pageNo': '1',
-    #     'numOfRows': '5',
-    #     'resultType': 'json',
-    #     'sgId': '20231011',
-    #     'sgTypecode': '4',
-    #     'sdName': '서울특별시',
-    #     'wiwName': '강동구'
-    # }
-    # params ={'serviceKey' : ELECTORS_NUMBER_API_KEY, 'pageNo' : '1', 'numOfRows' : '10', 'resultType' : 'json', 'sgId' : '20231011', 'sgTypecode' : '4', 'sdName' : '서울특별시', 'wiwName' : '강동구' }
-    # response = requests.get(electors_number_url, params=params)
-    # response = json.loads(response)
-    # data = response.json() # 계속해서 JSONDecodeError 발생
-    # return Response(response)
-    
     # --- 선거구별 정치인 조회 API 사용 ---
     params = {
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 100,
+        'pSize': 5,
         'ORIG_NM': orig_nm
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
-    
+
     result = []
+    try:
+        orig_detail = OrigDetail.objects.get(orig_nm=orig_nm)
+        # 선거구별 투표구수, 선거인수 return
+        result.append({'tpgCount': orig_detail.tpgCount, 'cfmtnElcnt': orig_detail.cfmtnElcnt})
+    except OrigDetail.DoesNotExist:
+        pass
+
     count = 0
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
         if data['row'][i]['POLY_NM'] == '더불어민주당':
             count += 1
         elif data['row'][i]['POLY_NM'] == '국민의힘':
@@ -121,15 +102,18 @@ def politician_list_by_hgnm(request, hg_nm):
         'KEY': PERSONAL_DATA_API_KEY,
         'Type': 'json',
         'pIndex': 1,
-        'pSize': 100,
-        'HG_NM': hg_nm
+        'pSize': 5,
+        'HG_NM': hg_nm,
+        'ORIG_NM': '서울'
     }
     response = requests.get(personal_data_url, params=params)
     data = response.json()['nwvrqwxyaytdsfvhu'][1]
     
     result = []
     for i in range(len(data['row'])):
-        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD']})
+        result.append({'POLY_NM': data['row'][i]['POLY_NM'], 'HG_NM': data['row'][i]['HG_NM'], 
+        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 'HOMEPAGE': data['row'][i]['HOMEPAGE'], 
+        'MONA_CD': data['row'][i]['MONA_CD'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
     
     return Response(result)
 
@@ -162,34 +146,26 @@ def politician_list_by_mona(request, mona_cd):
                        'ENG_NM': data['row'][i]['ENG_NM'], 'ORIG_NM': data['row'][i]['ORIG_NM'], 
                        'HOMEPAGE': data['row'][i]['HOMEPAGE'], 'MONA_CD': data['row'][i]['MONA_CD'], 
                        'UNITS': data['row'][i]['UNITS'], 'CMITS': data['row'][i]['CMITS'], 
-                       'MEM_TITLE': data['row'][i]['MEM_TITLE']})
+                       'MEM_TITLE': data['row'][i]['MEM_TITLE'], 'jpg_link': 'media/' + data['row'][i]['MONA_CD'] + '.jpg'})
         for j in range(len(bill_data['row'])):
             result.append({'BILL_NAME': bill_data['row'][j]['BILL_NAME'], 'DETAIL_LINK': bill_data['row'][j]['DETAIL_LINK']})
     return Response(result)
 
-def save_image(image_url, mona_cd):
-    image_url = image_url
-    
-    filename = default_storage.get_available_name(mona_cd + ".jpg")
-    
-    # Check if the file already exists
-    if default_storage.exists(filename):
-        # File already exists, use the existing file
-        media_url = default_storage.url(filename)
-        # return JsonResponse({"media_url": media_url})
-    
-    response = requests.get(image_url)
-    
-    if response.status_code == 200:
-        with default_storage.open(filename, "wb") as f:
-            f.write(response.content)
-        
-        media_url = default_storage.url(filename)
-
-
 class CommunityViewSet(viewsets.ModelViewSet):
     queryset = Community.objects.all()
     serializer_class = CommunitySerializer
+
+    def list(self, request, *args, **kwargs):
+        category = request.query_params.get('category')
+        
+        if category:
+            communities = self.queryset.filter(category=category)
+        else:
+            communities = self.queryset.all()
+        
+        serializer = self.get_serializer(communities, many=True)
+        return Response(serializer.data)
+
 
 def create(self, request):
     serializer = self.get_serailizer(data=request.data)
@@ -212,19 +188,6 @@ class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixi
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
 
-    def list(self, request, community_id=None):
-        community = get_object_or_404(Community, community_id=community_id)
-        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    def create(self, request, community_id=None):
-        community = get_object_or_404(Community, community_id=community_id)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(community=community)
-        return Response(serializer.data)
-    
     @action(detail=False, methods=['GET'])
     def result(self, request, community_id=None):
         total_count = Board.objects.filter(community_id=community_id).count()
@@ -246,53 +209,55 @@ class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixi
         }
 
         return Response(data)
+
+    def list(self, request, community_id=None):
+        community_id = get_object_or_404(Community, community_id=community_id)
+        queryset = self.filter_queryset(self.get_queryset().filter(community_id=community_id))
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request, community_id=None):
+        community_id = get_object_or_404(Community, community_id=community_id)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(community_id=community_id)
+        return Response(serializer.data)
+    
     
 
 class OpinionViewSet(viewsets.ModelViewSet):
     queryset = Opinion.objects.all()
     serializer_class = OpinionSerializer
 
-
-class CommunityBoardViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin):
-    queryset = Board.objects.all()
-    serializer_class = BoardSerializer
-
-    def list(self, request, community_id=None):
-        community = get_object_or_404(Community, community_id=community_id)
-        queryset = self.filter_queryset(self.get_queryset().filter(community=community))
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    def create(self, request, community_id=None):
-        community = get_object_or_404(Community, id=community_id)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(community=community)
-        return Response(serializer.data)
-
-
+def apply_regular_expression(text):
+    hangul = re.compile('[^ ㄱ-ㅣ 가-힣]')
+    result = hangul.sub('', text) # 불필요한 .^ 등의 표현 제거
+    return result
       
-def generate_wordcloud(request, community_id):
-    community = Community.objects.get(pk=community_id)
-    comment_messages = Opinion.objects.filter(community=community)
+def generate_wordcloud_good(request, community_id, pick_value='option1'):
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
     
     word_frequencies = {} 
     # Create a WordCloud object
     excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
 
     for message in comment_messages:
-        words = message.comment.split()  # 공백을 기준으로 단어 분리
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
         for word in words:
             if word not in excluded_words:
                 if word in word_frequencies:
                     word_frequencies[word] += 1
                 else:
                     word_frequencies[word] = 1
+
     project_root = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
     wordcloud = WordCloud(
         width=400, height=400, 
-        max_font_size=200, 
+        max_font_size=150, 
         background_color='white', 
         font_path=font_path, 
         prefer_horizontal = False,
@@ -300,11 +265,14 @@ def generate_wordcloud(request, community_id):
         colormap='binary'
     ).generate_from_frequencies(word_frequencies)
 
-    image_file_path = os.path.join(settings.MEDIA_ROOT, f'wordcloud_{community_id}.png')
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_good{community_id}.png')
     wordcloud.to_file(image_file_path)
 
-    community.wordcloud_image_path = f'wordcloud_{community_id}.png'
-    community.save()
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_good{community_id}.png'
+    community_id.save()
 
     buf = io.BytesIO()
     plt.figure(figsize=(6, 6))
@@ -317,7 +285,113 @@ def generate_wordcloud(request, community_id):
     return HttpResponse(buf.getvalue(), content_type='image/png')
 
 
+
+
+def generate_wordcloud_soso(request, community_id, pick_value='option2'):
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_soso{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_soso{community_id}.png'
+    community_id.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
+
+
+
+def generate_wordcloud_bad(request, community_id, pick_value='option3'):
+    community_id = Community.objects.get(pk=community_id)
+    comment_messages = Board.objects.filter(community_id=community_id, pick=pick_value)
+    
+    word_frequencies = {} 
+    # Create a WordCloud object
+    excluded_words = ['ㅅㅂ', '시발' ,'존나', '개']  
+
+    for message in comment_messages:
+        # words = message.comment.split()  # 공백을 기준으로 단어 분리
+        okt = Okt()  # 명사 형태소 추출 함수
+        words = okt.nouns(apply_regular_expression(message.comment))
+        for word in words:
+            if word not in excluded_words:
+                if word in word_frequencies:
+                    word_frequencies[word] += 1
+                else:
+                    word_frequencies[word] = 1
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(project_root, 'NotoSansKR-SemiBold.ttf')
+    wordcloud = WordCloud(
+        width=400, height=400, 
+        max_font_size=150, 
+        background_color='white', 
+        font_path=font_path, 
+        prefer_horizontal = False,
+        collocations=False, 
+        colormap='binary'
+    ).generate_from_frequencies(word_frequencies)
+
+    wordcloud_folder = os.path.join(settings.MEDIA_ROOT, 'wordcloud')
+    os.makedirs(wordcloud_folder, exist_ok=True)
+
+
+    image_file_path = os.path.join(wordcloud_folder, f'wordcloud_bad{community_id}.png')
+    wordcloud.to_file(image_file_path)
+
+    community_id.wordcloud_image_path = f'wordcloud/wordcloud_bad{community_id}.png'
+    community_id.save()
+    buf = io.BytesIO()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
-
