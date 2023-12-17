@@ -38,4 +38,5 @@ urlpatterns = [
     path('community/<int:community_id>/wordcloudgood', views.generate_wordcloud_good, name='generate_wordcloud_good'),
     path('community/<int:community_id>/wordcloudsoso', views.generate_wordcloud_soso, name='generate_wordcloud_soso'),
     path('community/<int:community_id>/wordcloudbad', views.generate_wordcloud_bad, name='generate_wordcloud_bad'),
+    path('naver-search/', NaverSearchView.as_view(), name='naver-search'),
 ]

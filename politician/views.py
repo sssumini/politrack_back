@@ -24,8 +24,36 @@ from http import HTTPStatus
 from konlpy.tag import Okt
 from collections import Counter
 import re
-
+import requests
+from config.Config import Config
+from rest_framework.views import APIView
 # Create your views here.
+
+
+
+class NaverSearchView(APIView):
+    def get(self, request):
+        naver_search_client_id = Config.naver_search_client_id
+        naver_search_client_secret = Config.naver_search_client_secret
+        naver_search_news_url = Config.naver_search_news_url
+        
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Naver-Client-Id": naver_search_client_id,
+            "X-Naver-Client-Secret": naver_search_client_secret,
+            }
+        
+        query = request.GET.get('query', '')
+        params = {
+        "query" : query,
+        "display" : request.GET.get('display', 5),
+        "sort" : request.GET.get('sort', 'sim')
+        }
+        response = requests.get(naver_search_news_url, params=params, headers=headers)
+        return Response(response.json())
+
+
+
 
 PERSONAL_DATA_API_KEY = settings.PERSONAL_DATA_API_KEY
 # ELECTORS_NUMBER_API_KEY = settings.ELECTORS_NUMBER_API_KEY
