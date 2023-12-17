@@ -10,7 +10,7 @@ class CommunitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Community
         #fields = '__all__'
-        fields = ('community_id','title', 'content', 'formatted_created_at', 'formatted_deadline')
+        fields = ('community_id','title', 'content', 'formatted_created_at', 'formatted_deadline', 'category')
 
 
 class BoardSerializer(serializers.ModelSerializer):
